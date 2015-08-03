@@ -1,4 +1,4 @@
-/Makefile.in
+Makefile.in
 /configure
 /config.log
 /config.status
@@ -6,3 +6,5 @@
 /missing
 /aclocal.m4
 /autom4te.cache
+/compile
+/depcomp
