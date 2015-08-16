@@ -6,7 +6,11 @@
 
 enum intel_hex_record_type {
     INTEL_HEX_DATA,
-    INTEL_HEX_EOF
+    INTEL_HEX_EOF,
+    INTEL_HEX_EXTENDED_SEGMENT_ADDRESS,
+    INTEL_HEX_START_SEGMENT_ADDRESS,
+    INTEL_HEX_EXTENDED_LINEAR_ADDRESS,
+    INTEL_HEX_START_LINEAR_ADDRESS
 };
 
 typedef struct intel_hex *intel_hex_t;
