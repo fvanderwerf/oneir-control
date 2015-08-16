@@ -10,6 +10,7 @@
 #include "sysfs_gpio.h"
 #include "gpio_spi.h"
 #include "avr.h"
+#include "intel_hex.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -23,12 +24,13 @@
 sysfs_gpio_t sclk = NULL, miso = NULL, mosi = NULL, reset = NULL;
 gpio_spi_t spi = NULL;
 avr_t avr = NULL;
+intel_hex_t ihex = NULL;
 
 
 void cleanup();
 
 
-int setup()
+int setup(const char *filename)
 {
     sclk = sysfs_gpio_create(11);
     miso = sysfs_gpio_create(9);
@@ -49,6 +51,10 @@ int setup()
     if (avr == NULL)
         goto error;
 
+    ihex = intel_hex_create(filename);
+    if (ihex == NULL)
+        goto error;
+
     return 0;
 
 error:
@@ -59,6 +65,9 @@ error:
 
 void cleanup()
 {
+    if (ihex != NULL)
+        intel_hex_destroy(ihex);
+
     if (avr != NULL)
         avr_destroy(avr);
 
@@ -80,12 +89,19 @@ void cleanup()
 
 
 
-int main(int argc, char *argv)
+int main(int argc, char *argv[])
 {
     int exitcode = 0;
+    int i;
 
-    if (setup() != 0) {
-        printf("setup failed\n");
+    if (argc < 2)
+    {
+        printf("not enough arguments\n");
+        exit(1);
+    }
+
+    if (setup(argv[1]) != 0) {
+        perror("setup failed\n");
         exit(1);
     }
 
@@ -100,6 +116,27 @@ int main(int argc, char *argv)
         perror("avr program enable");
         printf("program enable failed\n");
     }
+
+    printf("starting ihex parsing\n");
+    struct intel_hex_record record;
+
+    do {
+        intel_hex_get_next(ihex, &record);
+
+        switch(record.type) {
+            case INTEL_HEX_DATA:
+                printf("DATA address %04x:", (int) record.address);
+                for (i = 0; i < record.size; i++) {
+                    uint8_t *data = record.data;
+                    printf("%02hhx", data[i]);
+                }
+                printf("\n");
+                break;
+            case INTEL_HEX_EOF:
+                printf("EOF\n");
+                break;
+        }
+    } while (record.type != INTEL_HEX_EOF);
 
 #if 0
     switch (avr_read_signature(avr)) {
