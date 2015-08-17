@@ -1,6 +1,8 @@
 
 #include "intel_hex.h" 
 
+#include "cge.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -10,23 +12,6 @@
 #include <sys/mman.h>
 #include <ctype.h>
 #include <errno.h>
-
-#define CJMP(cond, label)       \
-    do                          \
-        if (cond)               \
-            goto label;         \
-    while(0)
-
-#define CJMP_ERRNO(cond, label, newerrno)   \
-    do {                                    \
-        if (cond) {                         \
-            goto label;                     \
-            errno = newerrno;               \
-        }                                   \
-    } while(0)
-
-#define NULL_ERROR(expr) CJMP((expr) == NULL, error)
-#define NEG_ERROR(expr) CJMP((expr) < 0, error)
 
 
 struct intel_hex
@@ -48,13 +33,14 @@ intel_hex_t intel_hex_create(const char *filename)
     int fd = -1;
     void *map;
 
-    NEG_ERROR(stat(filename, &fileinfo));
+    CGE_NEG(stat(filename, &fileinfo));
 
-    NULL_ERROR(ihex = malloc(sizeof(struct intel_hex)));
+    CGE_NULL(ihex = malloc(sizeof(struct intel_hex)));
 
-    NEG_ERROR(ihex->fd = open(filename, O_RDONLY));
+    CGE_NEG(ihex->fd = open(filename, O_RDONLY));
 
-    CJMP(MAP_FAILED == (map = mmap(NULL, fileinfo.st_size, PROT_READ, MAP_SHARED, ihex->fd, 0)), error);
+    map = mmap(NULL, fileinfo.st_size, PROT_READ, MAP_SHARED, ihex->fd, 0);
+    CGE(map == MAP_FAILED);
 
     ihex->fd = fd;
     ihex->data = map;
@@ -102,10 +88,7 @@ static int intel_hex_read_uint8(intel_hex_t ihex, uint8_t *value)
 {
     int i;
 
-    if ((ihex->size - ihex->readpos) < 2) {
-        errno = EINVAL;
-        goto error;
-    }
+    CGE_ERRNO((ihex->size - ihex->readpos) < 2, EINVAL);
 
     *value = 0;
 
@@ -186,11 +169,11 @@ static int intel_hex_read_uint16(intel_hex_t ihex, uint16_t *value)
 {
     uint8_t byte;
 
-    NEG_ERROR(intel_hex_read_uint8(ihex, &byte));
+    CGE_NEG(intel_hex_read_uint8(ihex, &byte));
 
     *value = byte << 8;
 
-    NEG_ERROR(intel_hex_read_uint8(ihex, &byte));
+    CGE_NEG(intel_hex_read_uint8(ihex, &byte));
 
     *value |= byte;
 
@@ -205,7 +188,7 @@ int intel_hex_read_byte_string(intel_hex_t ihex, uint8_t *data, int size)
     int i;
 
     for (i = 0; i < size; i++) {
-        NEG_ERROR(intel_hex_read_uint8(ihex, data));
+        CGE_NEG(intel_hex_read_uint8(ihex, data));
         data++;
     }
 
@@ -228,20 +211,20 @@ int intel_hex_get_next(intel_hex_t ihex, struct intel_hex_record *record)
 
     intel_hex_skip_newline(ihex);
 
-    NEG_ERROR(intel_hex_read_start_code(ihex));
+    CGE_NEG(intel_hex_read_start_code(ihex));
 
     /* reset checksum */
     ihex->checksum = 0;
 
-    NEG_ERROR(intel_hex_read_uint8(ihex, &(record->size)));
-    NEG_ERROR(intel_hex_read_uint16(ihex, &(record->address)));
-    NEG_ERROR(intel_hex_read_uint8(ihex, &type));
+    CGE_NEG(intel_hex_read_uint8(ihex, &(record->size)));
+    CGE_NEG(intel_hex_read_uint16(ihex, &(record->address)));
+    CGE_NEG(intel_hex_read_uint8(ihex, &type));
 
     record->type = type;
 
     if (ihex->buffersize < record->size) {
         free(ihex->buffer);
-        NULL_ERROR(ihex->buffer = malloc(record->size));
+        CGE_NULL(ihex->buffer = malloc(record->size));
     }
     
     intel_hex_read_byte_string(ihex, ihex->buffer, record->size); 
@@ -251,9 +234,9 @@ int intel_hex_get_next(intel_hex_t ihex, struct intel_hex_record *record)
     compchecksum = ~compchecksum;
     compchecksum++;
 
-    NEG_ERROR(intel_hex_read_uint8(ihex, &checksum));
+    CGE_NEG(intel_hex_read_uint8(ihex, &checksum));
 
-    CJMP_ERRNO(compchecksum != checksum, error, EINVAL);
+    CGE_ERRNO(compchecksum != checksum, EINVAL);
 
     return 0;
 

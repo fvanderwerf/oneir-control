@@ -1,6 +1,8 @@
 
 #include "sysfs_gpio.h"
 
+#include "cge.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -34,13 +36,7 @@ static int sysfs_gpio_write_number(const char *filename, int number)
     FILE *export;
     int byteswritten;
 
-    export = fopen(filename, "w");
-    if (export == NULL)
-        goto error;
-    
-    byteswritten = fprintf(export, "%d", number);
-    if (byteswritten < 0)
-        goto error;
+    CGE_NULL(fopen(filename, "w"));
 
     fclose(export);
     return 0;
@@ -78,16 +74,12 @@ sysfs_gpio_t sysfs_gpio_create(int gpio_num)
 {
     struct sysfs_gpio *instance = NULL;
 
-    instance = malloc(sizeof(*instance));
-
-    if (instance == NULL)
-        goto error;
+    CGE_NULL(instance = malloc(sizeof(*instance)));
 
     instance->gpio_num = gpio_num;
     instance->direction = GPIO_IN;
 
-    if (sysfs_gpio_export(gpio_num) != 0)
-        goto error;
+    CGE_NEG(sysfs_gpio_export(gpio_num) != 0);
 
     sysfs_gpio_setup_gpio(instance);
 
@@ -127,14 +119,10 @@ int sysfs_gpio_set_direction(sysfs_gpio_t gpio, enum gpio_direction direction)
     char filename[sysfs_gpio_direction_filename_maxlen];
     sprintf(filename, sysfs_gpio_direction_filename_format, gpio->gpio_num);
 
-    fdirection = fopen(filename, "w");
-
-    if (fdirection == NULL)
-        goto error;
+    CGE_NULL(fdirection = fopen(filename, "w"));
 
     numbytes_written = fputs(sysfs_gpio_get_direction_string(direction), fdirection);
-    if (numbytes_written == EOF)
-        goto error;
+    CGE(numbytes_written == EOF);
 
     gpio->direction = direction;
 
@@ -160,13 +148,10 @@ int sysfs_gpio_read(sysfs_gpio_t gpio)
 
     sprintf(filename, sysfs_gpio_value_filename_format, gpio->gpio_num);
 
-    valuefile = fopen(filename, "r");
-    if (valuefile == NULL)
-        goto error;
+    CGE_NULL(valuefile = fopen(filename, "r"));
 
     numelems_read = fread(value, 1, 1, valuefile);
-    if (numelems_read != 1)
-        goto error;
+    CGE(numelems_read != 1);
 
     fclose(valuefile);
 
@@ -190,18 +175,13 @@ int sysfs_gpio_write(sysfs_gpio_t gpio, int value)
     FILE *valuefile = NULL;
     int numbytes_written;
 
-    if (gpio->direction != GPIO_OUT)
-        goto error;
+    CGE_ERRNO(gpio->direction != GPIO_OUT, EPERM);
 
     sprintf(filename, sysfs_gpio_value_filename_format, gpio->gpio_num);
 
-    valuefile = fopen(filename, "w");
-    if (valuefile == NULL)
-        goto error;
+    CGE_NULL(valuefile = fopen(filename, "w"));
 
-    numbytes_written = fprintf(valuefile, "%d", value);
-    if (numbytes_written < 0)
-        goto error;
+    CGE_NEG(numbytes_written = fprintf(valuefile, "%d", value));
 
     fclose(valuefile);
 
