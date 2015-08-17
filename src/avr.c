@@ -8,12 +8,17 @@
 #include <errno.h>
 
 #define ATTINY_FLASH_WORDSIZE 2
+#define ATTINY_EEPROM_WORDSIZE 1
 
 struct attiny_config {
     enum attiny type;
     size_t flash_size;      //in number of words
     size_t flash_pagesize;  //in number of words
     size_t flash_nopages;   //number of pages
+
+    size_t eeprom_size;     //in number of words
+    size_t eeprom_pagesize; //in number of words
+    size_t eeprom_nopages;  //number of pages
 };
 
 struct avr {
@@ -25,23 +30,38 @@ struct avr {
 
 const struct attiny_config attiny25_config = {
     .type = ATTINY25,
+
     .flash_size = 1024,
     .flash_pagesize = 16,
-    .flash_nopages = 64
+    .flash_nopages = 64,
+
+    .eeprom_size = 128,
+    .eeprom_pagesize = 4,
+    .eeprom_nopages = 32
 };
 
 const struct attiny_config attiny45_config = {
     .type = ATTINY45,
+
     .flash_size = 2048,
     .flash_pagesize = 32,
-    .flash_nopages = 64
+    .flash_nopages = 64,
+
+    .eeprom_size = 256,
+    .eeprom_pagesize = 4,
+    .eeprom_nopages = 64
 };
 
 const struct attiny_config attiny85_config = {
     .type = ATTINY85,
+
     .flash_size = 4096,
     .flash_pagesize = 32,
-    .flash_nopages = 128
+    .flash_nopages = 128,
+
+    .eeprom_size = 512,
+    .eeprom_pagesize = 4,
+    .eeprom_nopages = 128
 };
 
 static enum attiny avr_read_signature(avr_t avr);
