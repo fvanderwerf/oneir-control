@@ -33,10 +33,12 @@ struct sysfs_gpio {
 
 static int sysfs_gpio_write_number(const char *filename, int number)
 {
-    FILE *export;
+    FILE *export = NULL;
     int byteswritten;
 
-    CGE_NULL(fopen(filename, "w"));
+    CGE_NULL(export = fopen(filename, "w"));
+
+    CGE_NEG(fprintf(export, "%d", number));
 
     fclose(export);
     return 0;

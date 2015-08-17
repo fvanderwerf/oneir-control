@@ -126,10 +126,13 @@ int avr_program_enable(avr_t avr)
     switch (type){
         case ATTINY25:
             avr->config = &attiny25_config;
+            break;
         case ATTINY45:
             avr->config = &attiny45_config;
+            break;
         case ATTINY85:
             avr->config = &attiny85_config;
+            break;
         default:
             avr->config = NULL;
             GE_ERRNO(1, EPROTO);
