@@ -106,17 +106,26 @@ error:
     return -1;
 }
 
-int override_gpio_override_set_direction(override_gpio_t gpio, enum gpio_direction)
+enum gpio_direction override_gpio_override_get_direction(override_gpio_t gpio)
 {
     CGE_ERRNO(!gpio->override, EPERM);
-    
+
     return gpio_get_direction(gpio->target);
 error:
     return -1;
 }
 
+int override_gpio_override_set_direction(override_gpio_t gpio, enum gpio_direction direction)
+{
+    CGE_ERRNO(!gpio->override, EPERM);
+    
+    return gpio_set_direction(gpio->target, direction);
+error:
+    return -1;
+}
 
-int override_gpio_read(override_gpio_t gpio)
+
+int override_gpio_override_read(override_gpio_t gpio)
 {
     CGE_ERRNO(!gpio->override, EPERM);
 
@@ -125,7 +134,7 @@ error:
     return -1;
 }
 
-int override_gpio_write(override_gpio_t gpio, int value)
+int override_gpio_override_write(override_gpio_t gpio, int value)
 {
     CGE_ERRNO(!gpio->override, EPERM);
 
