@@ -65,6 +65,7 @@ static void sysfs_gpio_setup_gpio(struct sysfs_gpio *gpio)
 {
     gpio->gpio.data = gpio;
     gpio->gpio.destroy = (gpio_destroy_t) sysfs_gpio_destroy;
+    gpio->gpio.get_direction = (gpio_get_direction_t) sysfs_gpio_get_direction;
     gpio->gpio.set_direction = (gpio_set_direction_t) sysfs_gpio_set_direction;
     gpio->gpio.read = (gpio_read_t) sysfs_gpio_read;
     gpio->gpio.write = (gpio_write_t) sysfs_gpio_write;
@@ -81,6 +82,8 @@ sysfs_gpio_t sysfs_gpio_create(int gpio_num)
 
     CGE_NEG(sysfs_gpio_export(gpio_num) != 0);
 
+    sysfs_gpio_set_direction(instance, GPIO_IN);
+
     sysfs_gpio_setup_gpio(instance);
 
     return instance;
@@ -94,6 +97,11 @@ error:
 gpio_t sysfs_gpio_to_gpio(sysfs_gpio_t gpio)
 {
     return &(gpio->gpio);
+}
+
+enum gpio_direction sysfs_gpio_get_direction(sysfs_gpio_t gpio)
+{
+    return gpio->direction;
 }
 
 static const char *sysfs_gpio_get_direction_string(enum gpio_direction direction)
