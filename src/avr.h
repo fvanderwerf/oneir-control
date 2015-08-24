@@ -5,6 +5,8 @@
 #include "gpio.h"
 #include "gpio_spi.h"
 
+#include <stdint.h>
+
 enum attiny {
     ATTINY_UNKNOWN,
     ATTINY25,
@@ -24,9 +26,13 @@ int avr_program_enable(avr_t avr);
 
 enum attiny avr_get_type(avr_t avr);
 
+int avr_poll_ready(avr_t avr);
+
 int avr_chip_erase(avr_t avr);
 
-int avr_poll_ready(avr_t avr);
+int avr_write_flash_load(avr_t avr, uint16_t offset, uint16_t value);
+
+int avr_write_flash_page(avr_t avr, uint16_t address);
 
 void avr_destroy(avr_t avr);
 

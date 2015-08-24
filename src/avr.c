@@ -135,7 +135,7 @@ int avr_program_enable(avr_t avr)
             break;
         default:
             avr->config = NULL;
-            GE_ERRNO(1, EPROTO);
+            GE_ERRNO(EPROTO);
             break;
     }
 
@@ -194,13 +194,6 @@ error:
     return -1;
 }
 
-int avr_chip_erase(avr_t avr)
-{
-    const char *tx = "\xac\x80\x00\x00";
-    char rx[4];
-
-    return gpio_spi_transfer(avr->spi, tx, rx, 4);
-}
 
 int avr_poll_ready(avr_t avr)
 {
@@ -215,6 +208,55 @@ error:
     return -1;
 }
 
+
+int avr_chip_erase(avr_t avr)
+{
+    const char *tx = "\xac\x80\x00\x00";
+    char rx[4];
+
+    return gpio_spi_transfer(avr->spi, tx, rx, 4);
+}
+
+int avr_write_flash_load(avr_t avr, uint16_t offset, uint16_t value)
+{
+    uint8_t tx[4];
+    uint8_t rx[4];
+
+    offset = offset & (avr->config->flash_pagesize - 1);
+
+    tx[0] = '\x40';
+    tx[1] = (offset >> 8) & 0xff;
+    tx[2] = offset & 0xff;
+    tx[3] = value & 0xff;
+
+    CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4));
+
+    tx[0] = 0x48;
+    tx[3] = (value >> 8) & 0xff;
+
+    CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4));
+
+    return 0;
+error:
+
+    return -1;
+}
+
+
+int avr_write_flash_page(avr_t avr, uint16_t address)
+{
+    uint8_t tx[4];
+    uint8_t rx[4];
+
+    address &= ~(avr->config->flash_pagesize - 1);
+
+    rx[0] = '\x4c';
+    rx[1] = (address >> 8) & 0xFF;
+    rx[2] = address & 0xFF;
+    rx[3] = '\x00';
+
+    return gpio_spi_transfer(avr->spi, tx, rx, 4);
+}
 
 void avr_destroy(avr_t avr)
 {
