@@ -4,7 +4,7 @@
 
 #include <errno.h>
 
-#define GE(cond)                \
+#define GE()                    \
     do                          \
         goto error;             \
     while(0)
@@ -15,7 +15,7 @@
             goto error;         \
     while(0)
 
-#define GE_ERRNO(cond, newerrno)            \
+#define GE_ERRNO(newerrno)                  \
     do {                                    \
         errno = newerrno;                   \
         goto error;                         \
