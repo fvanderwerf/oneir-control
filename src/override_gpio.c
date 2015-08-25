@@ -18,7 +18,7 @@ struct override_gpio
     int target_output;
 };
 
-void override_gpio_setup_gpio(override_gpio_t gpio)
+static void override_gpio_setup_gpio(override_gpio_t gpio)
 {
     gpio->gpio.destroy = (gpio_destroy_t) override_gpio_destroy;
     gpio->gpio.get_direction = (gpio_get_direction_t) override_gpio_get_direction;
@@ -38,11 +38,19 @@ override_gpio_t override_gpio_create(gpio_t target)
     gpio->target = target;
     gpio->override = 0;
 
+    override_gpio_setup_gpio(gpio);
+
     return gpio;
 
 error:
     return NULL;
 }
+
+gpio_t override_gpio_to_gpio(override_gpio_t gpio)
+{
+    return &gpio->gpio;
+}
+
 
 enum gpio_direction override_gpio_get_direction(override_gpio_t gpio)
 {

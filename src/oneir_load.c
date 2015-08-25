@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include "sysfs_gpio.h"
+#include "override_gpio.h"
 #include "gpio_spi.h"
 #include "avr.h"
 #include "intel_hex.h"
@@ -24,6 +25,7 @@
 
 
 sysfs_gpio_t sclk = NULL, miso = NULL, mosi = NULL, reset = NULL;
+override_gpio_t override_sclk = NULL, override_miso = NULL, override_mosi = NULL;
 gpio_spi_t spi = NULL;
 avr_t avr = NULL;
 oneir_mcu_t mcu = NULL;
@@ -42,10 +44,14 @@ int setup(const char *filename)
     if (sclk == NULL || miso == NULL || mosi == NULL || reset == NULL)
         goto error;
 
+    override_sclk = override_gpio_create(sysfs_gpio_to_gpio(sclk));
+    override_miso = override_gpio_create(sysfs_gpio_to_gpio(miso));
+    override_mosi = override_gpio_create(sysfs_gpio_to_gpio(mosi));
+
     spi = gpio_spi_create(
-            sysfs_gpio_to_gpio(sclk),
-            sysfs_gpio_to_gpio(mosi),
-            sysfs_gpio_to_gpio(miso));
+            override_gpio_to_gpio(override_sclk),
+            override_gpio_to_gpio(override_mosi),
+            override_gpio_to_gpio(override_miso));
     if (spi == NULL)
         goto error;
 
@@ -73,6 +79,15 @@ void cleanup()
 
     if (spi != NULL)
         gpio_spi_destroy(spi);
+
+    if (override_sclk != NULL)
+        override_gpio_destroy(override_sclk);
+
+    if (override_miso != NULL)
+        override_gpio_destroy(override_miso);
+
+    if (override_mosi != NULL)
+        override_gpio_destroy(override_mosi);
 
     if (reset != NULL)
         sysfs_gpio_destroy(reset);

@@ -6,7 +6,9 @@
 
 typedef struct override_gpio *override_gpio_t;
 
-override_gpio_t override_gpio_create();
+override_gpio_t override_gpio_create(gpio_t target);
+
+gpio_t override_gpio_to_gpio(override_gpio_t gpio);
 
 void override_gpio_destroy(override_gpio_t gpio);
 
