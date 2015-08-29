@@ -59,6 +59,8 @@ int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
 
     CGE_NEG(avr_program_enable(oneir->avr));
 
+    CGE_NEG(avr_chip_erase(oneir->avr));
+
     do {
         if (fread(&value, sizeof(value), 1, in) == 1) {
             value = le16toh(value);
@@ -71,11 +73,11 @@ int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
         address++;
 
         if (!(address % 32))
-            CGE_NEG(avr_write_flash_page(oneir->avr, address) < 0);
+            CGE_NEG(avr_write_flash_page(oneir->avr, address - 32) < 0);
     } while(1);
 
     if (address % 32)
-        CGE_NEG(avr_write_flash_page(oneir->avr, address) < 0);
+        CGE_NEG(avr_write_flash_page(oneir->avr, address & 0xFFE0) < 0);
 
     avr_unreset(oneir->avr);
 
