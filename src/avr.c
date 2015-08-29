@@ -250,10 +250,10 @@ int avr_write_flash_page(avr_t avr, uint16_t address)
 
     address &= ~(avr->config->flash_pagesize - 1);
 
-    rx[0] = '\x4c';
-    rx[1] = (address >> 8) & 0xFF;
-    rx[2] = address & 0xFF;
-    rx[3] = '\x00';
+    tx[0] = 0x4c;
+    tx[1] = (address >> 8) & 0xFF;
+    tx[2] = address & 0xFF;
+    tx[3] = 0x00;
 
     return gpio_spi_transfer(avr->spi, tx, rx, 4);
 }
