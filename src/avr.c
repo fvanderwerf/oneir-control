@@ -202,7 +202,7 @@ int avr_poll_ready(avr_t avr)
 
     CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4) == -1);
 
-    return rx[3] & 0x01;
+    return 1 - (rx[3] & 0x01);
 
 error:
     return -1;
