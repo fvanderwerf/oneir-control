@@ -7,7 +7,6 @@
 
 
 struct oneir_bus {
-
     override_gpio_t sclk;
     override_gpio_t miso;
     override_gpio_t mosi;

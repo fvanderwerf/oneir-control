@@ -3,6 +3,7 @@
 #define ONEIR_MCU_H
 
 #include "avr.h"
+#include "oneir_bus.h"
 
 #include <stdio.h>
 
@@ -13,7 +14,7 @@ enum oneir_mode {
 
 typedef struct oneir_mcu *oneir_mcu_t;
 
-oneir_mcu_t oneir_mcu_create(avr_t avr);
+oneir_mcu_t oneir_mcu_create(avr_t avr, oneir_bus_t bus);
 
 enum oneir_mode oneir_mcu_get_mode(oneir_mcu_t oneir);
 

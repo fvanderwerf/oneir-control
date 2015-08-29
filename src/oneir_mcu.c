@@ -3,70 +3,57 @@
 
 #include "cge.h"
 
+#include <linux/i2c-dev-user.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <linux/i2c-dev-user.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 struct oneir_mcu
 {
     avr_t avr;
-    enum oneir_mode mode;
+    oneir_bus_t bus;
     int i2cfd;
 };
 
-oneir_mcu_t oneir_mcu_create(avr_t avr)
+oneir_mcu_t oneir_mcu_create(avr_t avr, oneir_bus_t bus)
 {
     struct oneir_mcu *mcu;
 
     CGE_NULL(mcu = malloc(sizeof(struct oneir_mcu)));
 
     mcu->avr = avr;
-    mcu->mode = ONEIR_NORMAL_MODE;
+    mcu->bus = bus;
+    mcu->i2cfd = -1;
+    
+    CGE_NEG(mcu->i2cfd = open("/dev/i2c-1", O_RDWR));
+
+    int addr = 0x40; /* The I2C address */
+
+    CGE_NEG(ioctl(mcu->i2cfd, I2C_SLAVE, addr) < 0);
 
     return mcu;
 
 error:
+
+    if (mcu->i2cfd > 0)
+        close(mcu->i2cfd);
+    
     return NULL;
 }
 
-
-enum oneir_mode oneir_mcu_get_mode(oneir_mcu_t oneir)
-{
-    return oneir->mode;
-}
-
-
-int oneir_mcu_to_mode(oneir_mcu_t oneir, enum oneir_mode mode)
-{
-    switch(mode) {
-        case ONEIR_NORMAL_MODE:
-            if (oneir->mode == ONEIR_NORMAL_MODE)
-                break;
-
-            if (oneir->mode == ONEIR_PROG_MODE) {
-
-            }
-
-            break;
-        case ONEIR_PROG_MODE:
-            break;
-        default:
-            GE_ERRNO(EINVAL);
-            break;
-    }
-
-    oneir->mode = mode;
-    return 0;
-error:
-    return -1;
-}
 
 int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
 {
     uint16_t value;
     uint16_t address = 0;
 
-    //CGE_ERRNO(oneir->mode != ONEIR_PROG_MODE, EPERM);
+    oneir_bus_select(oneir->bus, ONEIR_SPI);
 
     CGE_NEG(avr_reset(oneir->avr));
 
@@ -100,26 +87,28 @@ error:
 
 int oneir_mcu_get_version(oneir_mcu_t oneir)
 {
-    CGE_ERRNO(oneir->mode != ONEIR_NORMAL_MODE, EPERM);
-
-    return 0;
-
 error:
     return -1;
 }
 
 int oneir_mcu_send(oneir_mcu_t oneir, uint8_t address, uint8_t code)
 {
-    CGE_ERRNO(oneir->mode != ONEIR_NORMAL_MODE, EPERM);
+    oneir_bus_select(oneir->bus, ONEIR_I2C);
 
-    return 0;
+    __u8 reg = 0x10;
+    __u16 value = address << 8 | code;
+    __s32 result;
+
+    CGE_NEG(result = i2c_smbus_write_word_data(oneir->i2cfd, reg, value));
 
 error:
+    perror("oneir_mcu_send:");
     return -1;
 }
 
 void oneir_mcu_destroy(oneir_mcu_t oneir)
 {
+    close(oneir->i2cfd);
     free(oneir);
 }
 

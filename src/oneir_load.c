@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include "sysfs_gpio.h"
+#include "oneir_bus.h"
 #include "override_gpio.h"
 #include "gpio_spi.h"
 #include "avr.h"
@@ -27,6 +28,7 @@
 sysfs_gpio_t sclk = NULL, miso = NULL, mosi = NULL, reset = NULL;
 override_gpio_t override_sclk = NULL, override_miso = NULL, override_mosi = NULL;
 gpio_spi_t spi = NULL;
+oneir_bus_t bus = NULL;
 avr_t avr = NULL;
 oneir_mcu_t mcu = NULL;
 
@@ -41,8 +43,7 @@ int setup(const char *filename)
     mosi = sysfs_gpio_create(10);
     reset = sysfs_gpio_create(25);
 
-    if (sclk == NULL || miso == NULL || mosi == NULL || reset == NULL)
-        goto error;
+    CGE(sclk == NULL || miso == NULL || mosi == NULL || reset == NULL);
 
     override_sclk = override_gpio_create(sysfs_gpio_to_gpio(sclk));
     override_miso = override_gpio_create(sysfs_gpio_to_gpio(miso));
@@ -52,14 +53,17 @@ int setup(const char *filename)
             override_gpio_to_gpio(override_sclk),
             override_gpio_to_gpio(override_mosi),
             override_gpio_to_gpio(override_miso));
+
     if (spi == NULL)
         goto error;
+
+    CGE_NULL(bus = oneir_bus_create(override_sclk, override_miso, override_mosi));
 
     avr = avr_create(spi, sysfs_gpio_to_gpio(reset));
     if (avr == NULL)
         goto error;
 
-    CGE_NULL(mcu = oneir_mcu_create(avr));
+    CGE_NULL(mcu = oneir_mcu_create(avr, bus));
 
     return 0;
 
@@ -79,6 +83,9 @@ void cleanup()
 
     if (spi != NULL)
         gpio_spi_destroy(spi);
+
+    if (bus != NULL)
+        oneir_bus_destroy(bus);
 
     if (override_sclk != NULL)
         override_gpio_destroy(override_sclk);
@@ -106,6 +113,7 @@ void cleanup()
 
 int main(int argc, char *argv[])
 {
+    FILE *fp;
     int exitcode = 0;
     int i;
 
@@ -120,15 +128,25 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    FILE *fp = fopen(argv[1], "r");
-    if (fp == NULL)
-        exit(1);
+    CGE_NULL(fp = fopen(argv[1], "r"));
 
-    oneir_mcu_load_firmware(mcu, fp);
+    CGE_NEG(oneir_mcu_load_firmware(mcu, fp));
 
     fclose(fp);
+
+    printf("programming completed\n");
+
+    for (i = 0; ; i++) {
+        i = i % 10;
+        sleep(i);
+        //oneir_mcu_send(mcu, 0xa5, 0xc3);
+        printf("i2c command sent\n");
+    }
 
     cleanup();
 
     return 0;
+
+error:
+    return -1;
 }
