@@ -258,6 +258,28 @@ int avr_write_flash_page(avr_t avr, uint16_t address)
     return gpio_spi_transfer(avr->spi, tx, rx, 4);
 }
 
+int avr_read_flash(avr_t avr, uint16_t address, uint16_t *value)
+{
+    uint8_t tx[] = { 0x28, (address >> 8) & 0xFF, address & 0xFF, 0x0 };
+    uint8_t rx[4];
+
+    *value = 0;
+
+    CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4));
+
+    *value = (rx[3] << 8) & 0xFF00;
+
+    tx[0] = 0x20;
+
+    CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4));
+
+    *value |= rx[3] & 0xFF;
+
+    return 0;
+error:
+    return -1;
+}
+
 void avr_destroy(avr_t avr)
 {
     free(avr);

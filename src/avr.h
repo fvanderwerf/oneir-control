@@ -34,6 +34,8 @@ int avr_write_flash_load(avr_t avr, uint16_t offset, uint16_t value);
 
 int avr_write_flash_page(avr_t avr, uint16_t address);
 
+int avr_read_flash(avr_t avr, uint16_t address, uint16_t *value);
+
 void avr_destroy(avr_t avr);
 
 #endif /* AVR_H */
