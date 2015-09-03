@@ -52,6 +52,12 @@ int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
 {
     uint16_t value;
     uint16_t address = 0;
+    uint16_t checksum1 = 0;
+    uint16_t checksum2 = 0;
+    uint16_t actualchecksum1 = 0;
+    uint16_t actualchecksum2 = 0;
+    int firmwaresize = 0;
+    int i;
 
     oneir_bus_select(oneir->bus, ONEIR_SPI);
 
@@ -64,7 +70,11 @@ int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
     do {
         if (fread(&value, sizeof(value), 1, in) == 1) {
             value = le16toh(value);
-            CGE_NEG(avr_write_flash_load(oneir->avr, address, value) < 0);
+            checksum1 += value;
+            checksum2 += checksum2 + checksum1;
+            firmwaresize++;
+
+            CGE_NEG(avr_write_flash_load(oneir->avr, address, value));
         } else {
             CGE(ferror(in));
             break;
@@ -73,11 +83,21 @@ int oneir_mcu_load_firmware(oneir_mcu_t oneir, FILE *in)
         address++;
 
         if (!(address % 32))
-            CGE_NEG(avr_write_flash_page(oneir->avr, address - 32) < 0);
+            CGE_NEG(avr_write_flash_page(oneir->avr, address - 32));
     } while(1);
 
     if (address % 32)
-        CGE_NEG(avr_write_flash_page(oneir->avr, address & 0xFFE0) < 0);
+        CGE_NEG(avr_write_flash_page(oneir->avr, address & 0xFFE0));
+
+    for (i = 0; i < firmwaresize; i++) {
+        CGE_NEG(avr_read_flash(oneir->avr, i, &value));
+        actualchecksum1 += value;
+        actualchecksum2 += actualchecksum2 + actualchecksum1;
+    }
+
+    if (actualchecksum1 != checksum1 || actualchecksum2 != checksum2) {
+        GE();
+    }
 
     avr_unreset(oneir->avr);
 
