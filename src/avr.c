@@ -72,7 +72,9 @@ avr_t avr_create(gpio_spi_t spi, gpio_t reset)
    
     CGE_NULL(avr = malloc(sizeof(struct avr)));
 
-    CGE_NEG(gpio_set_direction(reset, GPIO_OUT) != 0);
+    CGE_NEG(gpio_set_direction(reset, GPIO_OUT));
+    CGE_NEG(gpio_write(reset, 1));
+
 
     avr->spi = spi;
     avr->reset = reset;
@@ -266,6 +268,7 @@ int avr_read_flash(avr_t avr, uint16_t address, uint16_t *value)
     *value = 0;
 
     CGE_NEG(gpio_spi_transfer(avr->spi, tx, rx, 4));
+    CGE(rx[1] != tx[0]);
 
     *value = (rx[3] << 8) & 0xFF00;
 

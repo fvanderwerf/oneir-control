@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "gpio_smbus.h"
 #include "sysfs_gpio.h"
 #include "oneir_bus.h"
 #include "override_gpio.h"
@@ -27,6 +28,10 @@
 
 sysfs_gpio_t sclk = NULL, miso = NULL, mosi = NULL, reset = NULL;
 override_gpio_t override_sclk = NULL, override_miso = NULL, override_mosi = NULL;
+
+sysfs_gpio_t smbclk = NULL, smbdat = NULL;
+gpio_smbus_t smb = NULL;
+
 gpio_spi_t spi = NULL;
 oneir_bus_t bus = NULL;
 avr_t avr = NULL;
@@ -59,11 +64,16 @@ int setup(const char *filename)
 
     CGE_NULL(bus = oneir_bus_create(override_sclk, override_miso, override_mosi));
 
+    CGE_NULL(smbdat = sysfs_gpio_create(2));
+    CGE_NULL(smbclk = sysfs_gpio_create(3));
+
+    CGE_NULL(smb = gpio_smbus_create(sysfs_gpio_to_gpio(smbclk), sysfs_gpio_to_gpio(smbdat)));
+
     avr = avr_create(spi, sysfs_gpio_to_gpio(reset));
     if (avr == NULL)
         goto error;
 
-    CGE_NULL(mcu = oneir_mcu_create(avr, bus));
+    CGE_NULL(mcu = oneir_mcu_create(avr, bus, smb));
 
     return 0;
 
@@ -83,6 +93,15 @@ void cleanup()
 
     if (spi != NULL)
         gpio_spi_destroy(spi);
+
+    if (smb != NULL)
+        gpio_smbus_destroy(smb);
+
+    if (smbclk != NULL)
+        sysfs_gpio_destroy(smbclk);
+
+    if (smbdat != NULL)
+        sysfs_gpio_destroy(smbdat);
 
     if (bus != NULL)
         oneir_bus_destroy(bus);
@@ -117,30 +136,32 @@ int main(int argc, char *argv[])
     int exitcode = 0;
     int i;
 
-    if (argc < 2)
-    {
-        printf("not enough arguments\n");
-        exit(1);
-    }
 
     if (setup(argv[1]) != 0) {
         perror("setup failed\n");
         exit(1);
     }
 
-    CGE_NULL(fp = fopen(argv[1], "r"));
+    if (argc == 2)
+    {
 
-    CGE_NEG(oneir_mcu_load_firmware(mcu, fp));
+        CGE_NULL(fp = fopen(argv[1], "r"));
 
-    fclose(fp);
+        CGE_NEG(oneir_mcu_load_firmware(mcu, fp));
 
-    printf("programming completed\n");
+        fclose(fp);
+        printf("programming completed\n");
+    }
 
-    for (i = 0; ; i++) {
-        i = i % 10;
-        sleep(i);
-        //oneir_mcu_send(mcu, 0xa5, 0xc3);
-        printf("i2c command sent\n");
+    if (argc == 3)
+    {
+        uint8_t address, code;
+        sleep(1);
+
+        address = atoi(argv[1]);
+        code = atoi(argv[2]);
+
+        oneir_mcu_send(mcu, address, code);
     }
 
     cleanup();
