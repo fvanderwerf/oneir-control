@@ -114,10 +114,11 @@ int oneir_mcu_send(oneir_mcu_t oneir, uint8_t address, uint8_t code)
 {
     oneir_bus_select(oneir->bus, ONEIR_I2C);
 
-    uint8_t cmd = 0x10;
+    uint8_t cmd = 0x02;
     uint16_t value = address << 8 | code;
+    uint8_t buf[] = { 0x03, 0x01, address, code };
 
-    CGE_NEG(gpio_smbus_write_word(oneir->smbus, i2c_slave_addr, cmd, value));
+    CGE_NEG(gpio_smbus_write_buffer(oneir->smbus, i2c_slave_addr, buf, sizeof(buf)));
 
     return 0;
 

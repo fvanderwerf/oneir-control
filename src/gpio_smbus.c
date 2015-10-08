@@ -183,6 +183,28 @@ error:
     return -1;
 }
 
+int gpio_smbus_write_buffer(gpio_smbus_t bus, uint8_t address, const char *buf, size_t buflen)
+{
+    int i;
+
+    address <<= 1;
+
+    CGE_NEG(gpio_smbus_generate_start_condition(bus));
+
+    CGE_NEG(gpio_smbus_send_byte(bus, address));
+
+    for (i = 0; i < buflen; i++) {
+        CGE_NEG(gpio_smbus_send_byte(bus, buf[i]));
+    }
+
+    CGE_NEG(gpio_smbus_generate_stop_condition(bus));
+
+    return 0;
+
+error:
+    return -1;
+}
+
 void gpio_smbus_destroy(gpio_smbus_t bus)
 {
     gpio_set_direction(bus->smbclk, GPIO_IN);
