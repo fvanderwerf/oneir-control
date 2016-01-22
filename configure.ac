@@ -14,6 +14,7 @@ AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 
 # Checks for libraries.
+PKG_CHECK_MODULES([JSONC], [json-c])
 
 # Checks for header files.
 
