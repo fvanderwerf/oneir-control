@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -32,6 +33,12 @@ struct oneir_app_config app_config = {
     .gpio_smbdat = 2,
     .gpio_smbclk = 3
 };
+
+
+void signal_handler(int signal)
+{
+    quit = 1;
+}
 
 
 void parse_arguments(int argc, char *argv[])
@@ -161,6 +168,9 @@ int main(int argc, char *argv[])
 
     CGE_NULL(oneir = construct_app(&app_config));
 
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     CGE_NEG(unixdomain = create_unix_server_socket(config.unixsock));
 
     while (!quit) {
@@ -171,6 +181,7 @@ int main(int argc, char *argv[])
     }
 
     close(unixdomain);
+    unlink(config.unixsock);
 
     exit(EXIT_SUCCESS);
 
