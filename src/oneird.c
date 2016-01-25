@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <signal.h>
+#include <argp.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -40,21 +41,46 @@ void signal_handler(int signal)
     quit = 1;
 }
 
+struct argp_option options[] = {
+    { 0 }
+};
+
+error_t parse_argument(int key, char *arg, struct argp_state *state)
+{
+    switch(key) {
+        case ARGP_KEY_ARG:
+            if (config.unixsock == NULL)
+                config.unixsock = arg;
+            else
+                return ARGP_ERR_UNKNOWN;
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
+    }
+
+    return 0;
+}
+
 
 void parse_arguments(int argc, char *argv[])
 {
-    int c;
-    while ((c = getopt(argc, argv, "f:")) != -1) {
-        switch(c) {
-            case 'f':
-                config.unixsock = strdup(optarg);
-                break;
-            default:
-                fprintf(stderr, "Invalid command line\n");
-                exit(EXIT_FAILURE);
-                break;
-        }
-    }
+    struct argp argp;
+
+    argp_program_version = PACKAGE_VERSION;
+    argp_program_bug_address = PACKAGE_BUGREPORT;
+    argp_program_version_hook = NULL;
+    argp_err_exit_status = 0;
+
+    argp.options = options;
+    argp.parser = parse_argument;
+    argp.args_doc = "<unix_domain_socket>";
+    argp.doc = NULL;
+    argp.children = NULL;
+    argp.help_filter = NULL;
+    argp.argp_domain = NULL;
+
+    argp_parse(&argp, argc, argv, 0, NULL, NULL);
+
 }
 
 int handle_json(struct json_object *object, struct oneir_app *app)
@@ -152,6 +178,7 @@ error:
 void check_config()
 {
     if (config.unixsock == NULL) {
+        fprintf(stderr, "Define a unix domain socket to listen to\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -186,7 +213,6 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
 
 error:
-
     if (oneir != NULL)
         destroy_app(oneir);
 
