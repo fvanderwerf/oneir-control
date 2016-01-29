@@ -22,8 +22,10 @@ volatile int quit = 0;
 
 struct config {
     const char *unixsock;
+    int daemonize;
 } config = { 
-    NULL
+    NULL,
+    0
 };
 
 struct oneir_app_config app_config = {
@@ -42,6 +44,10 @@ void signal_handler(int signal)
 }
 
 struct argp_option options[] = {
+    {
+        .name = "daemonize",
+        .key = 'd',
+    },
     { 0 }
 };
 
@@ -53,6 +59,9 @@ error_t parse_argument(int key, char *arg, struct argp_state *state)
                 config.unixsock = arg;
             else
                 return ARGP_ERR_UNKNOWN;
+            break;
+        case 'd':
+            config.daemonize = 1;
             break;
         default:
             return ARGP_ERR_UNKNOWN;
@@ -218,6 +227,10 @@ int main(int argc, char *argv[])
     parse_arguments(argc, argv);
 
     check_config();
+
+    if (config.daemonize) {
+        daemon(0, 0);
+    }
 
     CGE_NULL(oneir = construct_app(&app_config));
 
