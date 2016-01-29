@@ -23,5 +23,6 @@ then
     ONEIR_SOCKET="$1"
 fi
 
+amqp-declare-queue -u "$AMQP_URL" -q "$QUEUE_NAME"
 amqp-consume -u "$AMQP_URL" -q "$QUEUE_NAME" socat - "UNIX-CONNECT:$ONEIR_SOCKET"
 
