@@ -2,7 +2,26 @@
 
 AMQP_URL=amqp://guest:guest@127.0.0.1
 QUEUE_NAME=oneir
-ONEIR_SOCK=/tmp/oneird.sock
+ONEIR_SOCKET=/var/run/oneird.sock
 
-amqp-consume -u "$AMQP_URL" -q "$QUEUE_NAME" socat - "UNIX-CONNECT:$ONEIR_SOCK"
+if [[ $# > 1 ]]
+then
+    AMQP_URL="$1"
+fi
+
+shift
+
+if [[ $# > 1 ]]
+then
+    QUEUE_NAME="$1"
+fi
+
+shift
+
+if [[ $# > 1 ]]
+then
+    ONEIR_SOCKET="$1"
+fi
+
+amqp-consume -u "$AMQP_URL" -q "$QUEUE_NAME" socat - "UNIX-CONNECT:$ONEIR_SOCKET"
 
