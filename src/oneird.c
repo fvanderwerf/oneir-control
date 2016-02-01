@@ -83,7 +83,7 @@ void parse_arguments(int argc, char *argv[])
 
 }
 
-int handle_json(struct json_object *object, struct oneir_app *app)
+static int handle_json_rc5(struct json_object *object, struct oneir_app *app)
 {
     struct json_object *address, *code;
 
@@ -101,6 +101,32 @@ int handle_json(struct json_object *object, struct oneir_app *app)
 error:
     return -1;
 }
+
+
+int handle_json(struct json_object *object, struct oneir_app *app)
+{
+    struct json_object *type, *command;
+    const char *strtype;
+
+    CGE(!json_object_object_get_ex(object, "type", &type));
+    CGE(!json_object_object_get_ex(object, "command", &command));
+
+    CGE(json_object_get_type(type) != json_type_string);
+    CGE(json_object_get_type(command) != json_type_object);
+
+    strtype = json_object_get_string(type);
+
+    if (strcmp(strtype, "rc5")) {
+        CGE_NEG(handle_json_rc5(command, app));
+    } else {
+        GE();
+    }
+
+    return 0;
+error:
+    return -1;
+}
+
 
 void handle_client(int client, struct oneir_app *app)
 {
