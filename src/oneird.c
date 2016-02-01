@@ -228,16 +228,16 @@ int main(int argc, char *argv[])
 
     check_config();
 
-    if (config.daemonize) {
-        daemon(0, 0);
-    }
-
     CGE_NULL(oneir = construct_app(&app_config));
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
     CGE_NEG(unixdomain = create_unix_server_socket(config.unixsock));
+
+    if (config.daemonize) {
+        CGE_NEG(daemon(0, 0));
+    }
 
     while (!quit) {
         int client = accept(unixdomain, NULL, NULL);
