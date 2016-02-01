@@ -114,7 +114,6 @@ int oneir_mcu_send_rc5(oneir_mcu_t oneir, uint8_t address, uint8_t code)
 {
     oneir_bus_select(oneir->bus, ONEIR_I2C);
 
-    uint8_t cmd = 0x02;
     uint16_t value = address << 8 | code;
     uint8_t buf[] = { 0x03, 0x01, address, code };
 
