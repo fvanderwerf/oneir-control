@@ -93,7 +93,7 @@ int handle_json(struct json_object *object, struct oneir_app *app)
     CGE(json_object_get_type(address) != json_type_int);
     CGE(json_object_get_type(code) != json_type_int);
 
-    CGE_NEG(oneir_mcu_send(app->mcu,
+    CGE_NEG(oneir_mcu_send_rc5(app->mcu,
             json_object_get_int(address),
             json_object_get_int(code)));
 

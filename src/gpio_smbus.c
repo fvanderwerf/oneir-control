@@ -67,9 +67,7 @@ error:
 
 static int gpio_smbus_generate_start_condition(gpio_smbus_t bus)
 {
-    //printf("pull down smbdat\n");
     CGE_NEG(gpio_smbus_pull_down(bus->smbdat));
-    //printf("pull down smbclk\n");
     CGE_NEG(gpio_smbus_pull_down(bus->smbclk));
 
     return 0;
@@ -101,7 +99,6 @@ static int gpio_smbus_send_byte(gpio_smbus_t bus, uint8_t byte)
 {
     int i;
     int ack;
-    //printf("send byte %02hhx\n", byte);
     /* send address and read/write bit */
     for (i = 0; i < 8; i++) {
         /* set smbdat */
@@ -111,42 +108,32 @@ static int gpio_smbus_send_byte(gpio_smbus_t bus, uint8_t byte)
             CGE_NEG(gpio_smbus_pull_down(bus->smbdat));
 
         /* release clock */
-        //printf("release clock %d\n", i);
         CGE_NEG(gpio_smbus_release(bus->smbclk));
 
         /* wait for slave to release clock as well */
         CGE_NEG(gpio_smbus_wait_release(bus->smbclk));
 
         /* pull down clock */
-        //printf("pull down clock %d\n", i);
         CGE_NEG(gpio_smbus_pull_down(bus->smbclk));
     }
     /* now start reading ack */
-    //printf("start reading ack\n");
 
-    //printf("release smbdat\n");
     /* release smbdat */
     CGE_NEG(gpio_smbus_release(bus->smbdat));
 
-    //printf("release clock\n");
     /* release clock */
     CGE_NEG(gpio_smbus_release(bus->smbclk));
 
-    //printf("wait for clock release\n");
     /* wait for client to release clock as well */
     CGE_NEG(gpio_smbus_wait_release(bus->smbclk));
 
-    //printf("reading ack\n");
 
     /* read ack */
     CGE_NEG(ack = gpio_read(bus->smbdat));
-    printf("ack: %d\n", ack);
 
-    //printf("pull down clock\n");
     /* pull down clock */
     CGE_NEG(gpio_smbus_pull_down(bus->smbclk));
 
-    //printf("pull down smbdat\n");
     /* pull down smbdat */
     CGE_NEG(gpio_smbus_pull_down(bus->smbclk));
 
@@ -163,7 +150,6 @@ int gpio_smbus_write_word(gpio_smbus_t bus, uint8_t address, uint8_t command, ui
     /* add read/write bit to address */
     address <<= 1; 
 
-    //printf("START generate\n");
     CGE_NEG(gpio_smbus_generate_start_condition(bus));
 
     CGE_NEG(gpio_smbus_send_byte(bus, address));
@@ -174,7 +160,6 @@ int gpio_smbus_write_word(gpio_smbus_t bus, uint8_t address, uint8_t command, ui
 
     CGE_NEG(gpio_smbus_send_byte(bus, (value >> 8) & 0xFF));
     
-    printf("generate stop condition\n");
     CGE_NEG(gpio_smbus_generate_stop_condition(bus));
 
     return 0;

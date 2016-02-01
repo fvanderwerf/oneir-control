@@ -25,7 +25,7 @@ int oneir_mcu_load_firmware(oneir_mcu_t mcu, FILE *in);
 
 int oneir_mcu_get_version(oneir_mcu_t oneir);
 
-int oneir_mcu_send(oneir_mcu_t mcu, uint8_t address, uint8_t code);
+int oneir_mcu_send_rc5(oneir_mcu_t mcu, uint8_t address, uint8_t code);
 
 void oneir_mcu_destroy(oneir_mcu_t oneir);
 

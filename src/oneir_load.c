@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
         address = atoi(argv[1]);
         code = atoi(argv[2]);
 
-        oneir_mcu_send(mcu, address, code);
+        oneir_mcu_send_rc5(mcu, address, code);
     }
 
     cleanup();
