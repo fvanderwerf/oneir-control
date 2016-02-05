@@ -127,6 +127,25 @@ error:
     return -1;
 }
 
+int oneir_mcu_send_raw(oneir_mcu_t oneir, uint8_t *command, size_t len)
+{
+    struct iovec vector[2];
+    uint8_t msglen = len;
+
+    oneir_bus_select(oneir->bus, ONEIR_I2C);
+
+    vector[0].iov_base = &msglen;
+    vector[0].iov_len = 1;
+    vector[1].iov_base = command;
+    vector[1].iov_len = len;
+    CGE_NEG(gpio_smbus_write_vector(oneir->smbus, i2c_slave_addr, vector, 2));
+
+    return 0;
+error:
+    perror("oneir_mcu_send:");
+    return -1;
+}
+
 void oneir_mcu_destroy(oneir_mcu_t oneir)
 {
     free(oneir);

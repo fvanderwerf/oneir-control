@@ -190,6 +190,32 @@ error:
     return -1;
 }
 
+int gpio_smbus_write_vector(gpio_smbus_t bus, uint8_t address, struct iovec *iovector, size_t count)
+{
+    int i, j;
+    uint8_t *buf;
+    size_t buflen;
+
+    address <<= 1;
+
+    CGE_NEG(gpio_smbus_generate_start_condition(bus));
+
+    CGE_NEG(gpio_smbus_send_byte(bus, address));
+
+    for (i = 0; i < count; i++) {
+        buf = iovector[i].iov_base;
+        buflen = iovector[i].iov_len;
+        for (j = 0; j < buflen; j++)
+            CGE_NEG(gpio_smbus_send_byte(bus, buf[j]));
+    }
+
+    CGE_NEG(gpio_smbus_generate_stop_condition(bus));
+
+    return 0;
+error:
+    return -1;
+}
+
 void gpio_smbus_destroy(gpio_smbus_t bus)
 {
     gpio_set_direction(bus->smbclk, GPIO_IN);

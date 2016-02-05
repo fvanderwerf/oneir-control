@@ -5,6 +5,7 @@
 
 #include "cge.h"
 #include "oneir_app.h"
+#include "hex.h"
 
 #include <json.h>
 #include <unistd.h>
@@ -96,6 +97,8 @@ static int handle_json_rc5(struct json_object *object, struct oneir_app *app)
 {
     struct json_object *address, *code;
 
+    CGE(json_object_get_type(object) != json_type_object);
+
     CGE(!json_object_object_get_ex(object, "address", &address));
     CGE(!json_object_object_get_ex(object, "code", &code));
 
@@ -111,6 +114,33 @@ error:
     return -1;
 }
 
+int handle_json_raw(struct json_object *object, struct oneir_app *app)
+{
+    const char *hex_command = NULL;
+    int hex_command_len;
+    char *command = NULL;
+
+    CGE(json_object_get_type(object) != json_type_string);
+
+    hex_command_len = json_object_get_string_len(object);
+
+    CGE_NULL(command = malloc(hex_command_len/2));
+
+    hex_command = json_object_get_string(object);
+
+    CGE_NEG(hex_decode(command, hex_command, hex_command_len));
+
+//    CGE_NEG(oneir_mcu_send_raw(app->mcu,
+                //json_object
+
+    return 0;
+error:
+    if (command)
+        free(command);
+
+    return -1;
+}
+
 
 int handle_json(struct json_object *object, struct oneir_app *app)
 {
@@ -121,12 +151,13 @@ int handle_json(struct json_object *object, struct oneir_app *app)
     CGE(!json_object_object_get_ex(object, "command", &command));
 
     CGE(json_object_get_type(type) != json_type_string);
-    CGE(json_object_get_type(command) != json_type_object);
 
     strtype = json_object_get_string(type);
 
     if (strcmp(strtype, "rc5")) {
         CGE_NEG(handle_json_rc5(command, app));
+    } else if (strcmp(strtype, "raw")) {
+        CGE_NEG(handle_json_raw(command, app));
     } else {
         GE();
     }
