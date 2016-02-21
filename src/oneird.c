@@ -154,9 +154,9 @@ int handle_json(struct json_object *object, struct oneir_app *app)
 
     strtype = json_object_get_string(type);
 
-    if (strcmp(strtype, "rc5")) {
+    if (strcmp(strtype, "rc5") == 0) {
         CGE_NEG(handle_json_rc5(command, app));
-    } else if (strcmp(strtype, "raw")) {
+    } else if (strcmp(strtype, "raw") == 0) {
         CGE_NEG(handle_json_raw(command, app));
     } else {
         GE();
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
         int client = accept(unixdomain, NULL, NULL);
 
         if (client >= 0)
-            handle_client(client, oneir);
+            handle_client(0, /*client*/ oneir);
     }
 
     close(unixdomain);
